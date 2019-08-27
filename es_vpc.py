@@ -1,4 +1,5 @@
 import boto3
+import requests
 from aws_requests_auth.aws_auth import AWSRequestsAuth
 from elasticsearch import Elasticsearch, RequestsHttpConnection
 
@@ -6,6 +7,7 @@ from elasticsearch import Elasticsearch, RequestsHttpConnection
 def es_config():
     session = boto3.session.Session()
     credentials = session.get_credentials().get_frozen_credentials()
+
     print(credentials.access_key)
     print(credentials.secret_key)
     print(session.region_name)
@@ -15,8 +17,9 @@ def es_config():
     aws_auth = AWSRequestsAuth(
         aws_access_key=credentials.access_key,
         aws_secret_access_key=credentials.secret_key,
+        aws_token=credentials.token,
         aws_host=es_host,
-        aws_region=session.region_name,
+        aws_region='us-east-1',
         aws_service='es'
     )
     es = Elasticsearch(
@@ -27,11 +30,14 @@ def es_config():
         connection_class=RequestsHttpConnection)
 
     document = {
-        "title": "Moneyball",
+        "title": "Money ball",
         "director": "Bennett Miller",
         "year": "2011"
     }
 
+    response = requests.get('https://vpc-es-cluster-1-k2q764gewwgbshvntv6rpz5noe.us-east-1.es.amazonaws.com',
+                            auth=aws_auth)
+    print(response.content)
     es.index(index="movies", doc_type="_doc", id="5", body=document)
 
     print(es.get(index="movies", doc_type="_doc", id="5"))
